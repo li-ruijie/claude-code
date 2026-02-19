@@ -10,6 +10,12 @@
         }
     },
     "bin": "claude.cmd",
+    "post_install": [
+        "New-Item -ItemType Directory -Path \"$persist_dir\" -Force | Out-Null",
+        "Move-Item -Path \"$dir\\node_modules\\@anthropic-ai\\claude-code\\cli.js\" -Destination \"$persist_dir\\cli.js\" -Force",
+        "& icacls \"$persist_dir\\cli.js\" /reset | Out-Null",
+        "New-Item -ItemType SymbolicLink -Path \"$dir\\node_modules\\@anthropic-ai\\claude-code\\cli.js\" -Target \"$persist_dir\\cli.js\" | Out-Null"
+    ],
     "checkver": {
         "url": "https://api.github.com/repos/li-ruijie/claude-code/releases?per_page=100",
         "regex": "claude-code-v([\\d.]+)-bun-v([\\d.]+)"
