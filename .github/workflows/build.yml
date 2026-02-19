@@ -262,10 +262,18 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Pull latest to avoid conflicts with concurrent deno release
+          git pull --ff-only origin main || git pull --rebase origin main
+
+          # Re-apply versions.json update on top of pulled state
+          jq --arg cc "$CC_VER" --arg node "$NODE_VER" \
+            '.["claude-code"] = $cc | .node = $node' \
+            versions.json > versions.json.tmp && mv versions.json.tmp versions.json
+
           git add versions.json scoop/claude-code-npm.json
           if ! git diff --cached --quiet; then
             git commit -m "release: node v${CC_VER}-node-v${NODE_VER}"
-            git pull --rebase origin main
             git push
           fi
 
@@ -376,9 +384,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Pull latest to avoid conflicts with concurrent node release
+          git pull --ff-only origin main || git pull --rebase origin main
+
+          # Re-apply versions.json update on top of pulled state
+          jq --arg cc "$CC_VER" --arg deno "$DENO_VER" \
+            '.["claude-code"] = $cc | .deno = $deno' \
+            versions.json > versions.json.tmp && mv versions.json.tmp versions.json
+
           git add versions.json scoop/claude-code-deno.json
           if ! git diff --cached --quiet; then
             git commit -m "release: deno v${CC_VER}-deno-v${DENO_VER}"
-            git pull --rebase origin main
             git push
           fi
