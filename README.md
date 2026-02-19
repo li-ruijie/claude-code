@@ -27,13 +27,6 @@ Same matrix as above. Deno compatibility with Claude Code is not officially supp
 
 Extract and run `claude.cmd`. Optionally add the extracted directory to your `PATH`.
 
-### Windows (Scoop)
-
-```powershell
-scoop bucket add claude-code https://github.com/li-ruijie/claude-code
-scoop install claude-code/claude-code-npm
-```
-
 ### Linux (tar.gz)
 
 ```bash
