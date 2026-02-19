@@ -12,8 +12,8 @@
     "bin": "claude.cmd",
     "post_install": [
         "New-Item -ItemType Directory -Path \"$persist_dir\" -Force | Out-Null",
-        "Move-Item -Path \"$dir\\node_modules\\@anthropic-ai\\claude-code\\cli.js\" -Destination \"$persist_dir\\cli.js\" -Force",
-        "& icacls \"$persist_dir\\cli.js\" /reset | Out-Null",
+        "Copy-Item -Path \"$dir\\node_modules\\@anthropic-ai\\claude-code\\cli.js\" -Destination \"$persist_dir\\cli.js\" -Force",
+        "Remove-Item -Path \"$dir\\node_modules\\@anthropic-ai\\claude-code\\cli.js\" -Force",
         "New-Item -ItemType SymbolicLink -Path \"$dir\\node_modules\\@anthropic-ai\\claude-code\\cli.js\" -Target \"$persist_dir\\cli.js\" | Out-Null"
     ],
     "checkver": {
