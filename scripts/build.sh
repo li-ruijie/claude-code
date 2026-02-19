@@ -199,7 +199,8 @@ fi
 
 if [[ "$TARGET_OS" == "win" ]]; then
   ARCHIVE_NAME="${ARCHIVE_BASE}.zip"
-  (cd "$BUILD_DIR" && zip -qr "$OUTPUT_DIR/$ARCHIVE_NAME" "$BUNDLE_NAME")
+  # Windows runners don't have zip; use 7z which is pre-installed
+  (cd "$BUILD_DIR" && 7z a -tzip -mx=5 "$OUTPUT_DIR/$ARCHIVE_NAME" "$BUNDLE_NAME" > /dev/null)
 else
   ARCHIVE_NAME="${ARCHIVE_BASE}.tar.gz"
   tar -czf "$OUTPUT_DIR/$ARCHIVE_NAME" -C "$BUILD_DIR" "$BUNDLE_NAME"
