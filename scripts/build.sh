@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Usage:
 #   ./scripts/build.sh \
-#     --runtime node|deno \
+#     --runtime node \
 #     --os win|linux \
 #     --arch x64|arm64 \
 #     --cc-version 2.1.47 \
@@ -57,14 +57,14 @@ mkdir -p "$BUNDLE_DIR"
 
 # Map arch names
 case "$ARCH" in
-  x64)   NODE_ARCH="x64";     DENO_ARCH="x86_64"; BUN_ARCH="x64";      DEB_ARCH="amd64" ;;
-  arm64) NODE_ARCH="arm64";   DENO_ARCH="aarch64"; BUN_ARCH="aarch64"; DEB_ARCH="arm64" ;;
+  x64)   NODE_ARCH="x64";   DEB_ARCH="amd64" ;;
+  arm64) NODE_ARCH="arm64"; DEB_ARCH="arm64" ;;
   *) echo "Unsupported arch: $ARCH" >&2; exit 1 ;;
 esac
 
 case "$TARGET_OS" in
-  win)   PLATFORM="win32";  NODE_OS="win";   DENO_SUFFIX="pc-windows-msvc" ;;
-  linux) PLATFORM="linux";  NODE_OS="linux"; DENO_SUFFIX="unknown-linux-gnu" ;;
+  win)   PLATFORM="win32";  NODE_OS="win" ;;
+  linux) PLATFORM="linux";  NODE_OS="linux" ;;
   *) echo "Unsupported OS: $TARGET_OS" >&2; exit 1 ;;
 esac
 
@@ -79,60 +79,22 @@ echo "Target:  $TARGET_OS-$ARCH"
 # ---------------------------------------------------------------------------
 echo "--- Downloading $RUNTIME runtime ---"
 
-if [[ "$RUNTIME" == "node" ]]; then
-  RUNTIME_DIR="$BUNDLE_DIR/node"
-  mkdir -p "$RUNTIME_DIR"
+RUNTIME_DIR="$BUNDLE_DIR/node"
+mkdir -p "$RUNTIME_DIR"
 
-  if [[ "$TARGET_OS" == "win" ]]; then
-    NODE_URL="https://nodejs.org/dist/v${RUNTIME_VERSION}/node-v${RUNTIME_VERSION}-win-${NODE_ARCH}.zip"
-    echo "Downloading $NODE_URL"
-    curl -fsSL -o "$BUILD_DIR/node.zip" "$NODE_URL"
-    # Extract only node.exe
-    unzip -q -j "$BUILD_DIR/node.zip" "node-v${RUNTIME_VERSION}-win-${NODE_ARCH}/node.exe" -d "$RUNTIME_DIR"
-  else
-    NODE_URL="https://nodejs.org/dist/v${RUNTIME_VERSION}/node-v${RUNTIME_VERSION}-linux-${NODE_ARCH}.tar.xz"
-    echo "Downloading $NODE_URL"
-    curl -fsSL -o "$BUILD_DIR/node.tar.xz" "$NODE_URL"
-    tar -xJf "$BUILD_DIR/node.tar.xz" -C "$BUILD_DIR" "node-v${RUNTIME_VERSION}-linux-${NODE_ARCH}/bin/node"
-    cp "$BUILD_DIR/node-v${RUNTIME_VERSION}-linux-${NODE_ARCH}/bin/node" "$RUNTIME_DIR/node"
-    chmod +x "$RUNTIME_DIR/node"
-  fi
-
-elif [[ "$RUNTIME" == "deno" ]]; then
-  RUNTIME_DIR="$BUNDLE_DIR/deno"
-  mkdir -p "$RUNTIME_DIR"
-
-  DENO_ZIP="deno-${DENO_ARCH}-${DENO_SUFFIX}.zip"
-  DENO_URL="https://github.com/denoland/deno/releases/download/v${RUNTIME_VERSION}/${DENO_ZIP}"
-  echo "Downloading $DENO_URL"
-  curl -fsSL -o "$BUILD_DIR/deno.zip" "$DENO_URL"
-
-  if [[ "$TARGET_OS" == "win" ]]; then
-    unzip -q "$BUILD_DIR/deno.zip" "deno.exe" -d "$RUNTIME_DIR"
-  else
-    unzip -q "$BUILD_DIR/deno.zip" "deno" -d "$RUNTIME_DIR"
-    chmod +x "$RUNTIME_DIR/deno"
-  fi
-
-elif [[ "$RUNTIME" == "bun" ]]; then
-  RUNTIME_DIR="$BUNDLE_DIR/bun"
-  mkdir -p "$RUNTIME_DIR"
-
-  if [[ "$TARGET_OS" == "win" ]]; then
-    BUN_ZIP="bun-windows-${BUN_ARCH}.zip"
-  else
-    BUN_ZIP="bun-linux-${BUN_ARCH}.zip"
-  fi
-  BUN_URL="https://github.com/oven-sh/bun/releases/download/bun-v${RUNTIME_VERSION}/${BUN_ZIP}"
-  echo "Downloading $BUN_URL"
-  curl -fsSL -o "$BUILD_DIR/bun.zip" "$BUN_URL"
-
-  if [[ "$TARGET_OS" == "win" ]]; then
-    unzip -q -j "$BUILD_DIR/bun.zip" "*/bun.exe" -d "$RUNTIME_DIR"
-  else
-    unzip -q -j "$BUILD_DIR/bun.zip" "*/bun" -d "$RUNTIME_DIR"
-    chmod +x "$RUNTIME_DIR/bun"
-  fi
+if [[ "$TARGET_OS" == "win" ]]; then
+  NODE_URL="https://nodejs.org/dist/v${RUNTIME_VERSION}/node-v${RUNTIME_VERSION}-win-${NODE_ARCH}.zip"
+  echo "Downloading $NODE_URL"
+  curl -fsSL -o "$BUILD_DIR/node.zip" "$NODE_URL"
+  # Extract only node.exe
+  unzip -q -j "$BUILD_DIR/node.zip" "node-v${RUNTIME_VERSION}-win-${NODE_ARCH}/node.exe" -d "$RUNTIME_DIR"
+else
+  NODE_URL="https://nodejs.org/dist/v${RUNTIME_VERSION}/node-v${RUNTIME_VERSION}-linux-${NODE_ARCH}.tar.xz"
+  echo "Downloading $NODE_URL"
+  curl -fsSL -o "$BUILD_DIR/node.tar.xz" "$NODE_URL"
+  tar -xJf "$BUILD_DIR/node.tar.xz" -C "$BUILD_DIR" "node-v${RUNTIME_VERSION}-linux-${NODE_ARCH}/bin/node"
+  cp "$BUILD_DIR/node-v${RUNTIME_VERSION}-linux-${NODE_ARCH}/bin/node" "$RUNTIME_DIR/node"
+  chmod +x "$RUNTIME_DIR/node"
 fi
 
 # ---------------------------------------------------------------------------
@@ -197,14 +159,10 @@ fi
 echo "--- Copying wrapper ---"
 
 if [[ "$TARGET_OS" == "win" ]]; then
-  cp "$REPO_ROOT/templates/claude-${RUNTIME}.cmd" "$BUNDLE_DIR/claude.cmd"
+  cp "$REPO_ROOT/templates/claude-node.cmd" "$BUNDLE_DIR/claude.cmd"
 else
-  cp "$REPO_ROOT/templates/claude-${RUNTIME}.sh" "$BUNDLE_DIR/claude"
+  cp "$REPO_ROOT/templates/claude-node.sh" "$BUNDLE_DIR/claude"
   chmod +x "$BUNDLE_DIR/claude"
-fi
-
-if [[ "$RUNTIME" == "deno" ]]; then
-  cp "$REPO_ROOT/templates/deno-shim.js" "$BUNDLE_DIR/deno-shim.js"
 fi
 
 # Remove package.json (not needed at runtime)
@@ -234,23 +192,10 @@ echo "Created: $OUTPUT_DIR/$ARCHIVE_NAME"
 if [[ "$TARGET_OS" == "linux" ]]; then
   echo "--- Building .deb package ---"
 
-  case "$RUNTIME" in
-    node)
-      DEB_PKG_NAME="claude-code"
-      DEB_NAME="claude-code_${CC_VERSION}-node${RUNTIME_VERSION}_${DEB_ARCH}.deb"
-      TEMPLATE="$REPO_ROOT/debian/control.node.template"
-      RT_VER_LABEL="NODE_VER" ;;
-    deno)
-      DEB_PKG_NAME="claude-code-deno"
-      DEB_NAME="claude-code-deno_${CC_VERSION}-deno${RUNTIME_VERSION}_${DEB_ARCH}.deb"
-      TEMPLATE="$REPO_ROOT/debian/control.deno.template"
-      RT_VER_LABEL="DENO_VER" ;;
-    bun)
-      DEB_PKG_NAME="claude-code-bun"
-      DEB_NAME="claude-code-bun_${CC_VERSION}-bun${RUNTIME_VERSION}_${DEB_ARCH}.deb"
-      TEMPLATE="$REPO_ROOT/debian/control.bun.template"
-      RT_VER_LABEL="BUN_VER" ;;
-  esac
+  DEB_PKG_NAME="claude-code"
+  DEB_NAME="claude-code_${CC_VERSION}-node${RUNTIME_VERSION}_${DEB_ARCH}.deb"
+  TEMPLATE="$REPO_ROOT/debian/control.node.template"
+  RT_VER_LABEL="NODE_VER"
 
   DEB_ROOT="$BUILD_DIR/${DEB_PKG_NAME}_${CC_VERSION}"
   mkdir -p "$DEB_ROOT/DEBIAN"
